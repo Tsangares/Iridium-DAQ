@@ -33,15 +33,16 @@ class Daq(object):
             if not ch_on:
                 continue
             self.scope.configure_channel(ch_num, False, 0)
-            if ch_num is not int(scan_smu.split("_")[1])-1:
-                self.scope.configure_constant_output(ch_num, 0, ch_comp)
+            #if ch_num is not int(scan_smu.split("_")[1])-1:
+            self.scope.configure_constant_output(ch_num, 0, ch_comp)
         self.sample_smu = int(scan_smu.split("_")[1])-1
+        print("SCAN_SMU:{}".format(self.sample_smu))
 
-        self.scope.configure_sampling_measurement(_int_time=1)
+        self.scope.configure_integration_time(_int_time=1)
         self.iv_loop(smu_global_params[1], keithley_global_params[1])
         self.dump_data()
         self.scope.close()
-        #self.supply.close()
+        self.supply.supply.close()
 
     def dump_data(self):
         with open(self.output_file+".csv", "w") as f:
@@ -55,33 +56,45 @@ class Daq(object):
                 ))
 
     def iv_loop(self, analyzer_voltages, keithley_voltages):
+
         for keithley_region in keithley_voltages:
+
             voltage_list = keithley_region.strip().split(" ")
+
             start_volt = float(voltage_list[0])
             end_volt = float(voltage_list[1])
             step_volt = float(voltage_list[2])
+
             if start_volt > end_volt:
                 step_volt = -1*abs(step_volt)
-            num_steps = int((end_volt-start_volt)/step_volt)
+
+            num_steps = int((end_volt-start_volt)/step_volt)+1
+
             for volt in range(num_steps):
+
                 self.supply.set_output(volt*step_volt+start_volt)
                 if __debug__:
                     print("KVOLT:{}".format(volt*step_volt+start_volt))
                 k_current = self.supply.get_current()
+
                 for analyzer_region in analyzer_voltages:
+
                     anal_voltage_list = analyzer_region.strip().split(" ")
                     anal_start_volt = float(anal_voltage_list[0])
                     anal_end_volt = float(anal_voltage_list[1])
                     anal_step_volt = float(anal_voltage_list[2])
+
                     if anal_start_volt > anal_end_volt:
                         anal_step_volt = -1 * abs(anal_step_volt)
-                    anal_num_steps = int((anal_end_volt - anal_start_volt) / anal_step_volt)
+
+                    anal_num_steps = int((anal_end_volt - anal_start_volt) / anal_step_volt)+1
+
                     for anal_volt in range(anal_num_steps):
                         currents = []
                         if __debug__:
                             print("AVOLT:{}".format(anal_volt * anal_step_volt + anal_start_volt))
                         self.scope.configure_constant_output(
-                            self.sample_smu,
+                            str(int(self.sample_smu)+1),
                             anal_volt * anal_step_volt + anal_start_volt,
                             self.compliance[self.sample_smu]
                         )
@@ -91,13 +104,13 @@ class Daq(object):
                         currents.append(self.scope.read_trace_data("I2"))
                         if self.sample_smu == 0:
                             self.list_data.append((
-                                (volt, k_current),
+                                (volt*step_volt+start_volt, k_current),
                                 (anal_volt * anal_step_volt + anal_start_volt, currents[0]),
                                 (0, currents[1])
                             ))
                         else:
                             self.list_data.append((
-                                (volt, k_current),
+                                (volt*step_volt+start_volt, k_current),
                                 (0, currents[0]),
                                 (anal_volt * anal_step_volt + anal_start_volt, currents[1])
                             ))
