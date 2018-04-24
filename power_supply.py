@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import socket
+
 import pyvisa
 
 
@@ -10,7 +12,7 @@ class PowerSupplyFactory(object):
     to get a power supply object instance
     """
 
-    def factory(power_supply_type):
+    def factory(power_supply_type, address):
         """
         Factory method for instantiating power supply objects
         Call this function to create a client interface for the
@@ -25,9 +27,9 @@ class PowerSupplyFactory(object):
         """
 
         if power_supply_type.lower() == "keithley_2600":
-            return Keithley2657a()
+            return Keithley2657a(address)
         elif power_supply_type.lower() == "keithley_2400":
-            return Keithley2400()
+            return Keithley2400(address)
         assert 0, "Could not create power supply of type: " + power_supply_type
 
     factory = staticmethod(factory)
@@ -41,24 +43,45 @@ class Keithley2657a(PowerSupplyFactory):
         Checks to make sure that the power supply is not on
         :param gpib_address: GPIB Address of power supply
         """
+        resource_manager = None
+        self.supply = None
 
-        assert (gpib_address >= 0), "Please enter a valid GPIB address"
+        if gpib_address is "":
+            if __debug__:
+                print("Blank ip, using gpib")
+            resource_manager = pyvisa.ResourceManager()
+        else:
+            if __debug__:
+                print("Valid ip, testing")
+            try:
+                socket.setdefaulttimeout(5)
+                socket.inet_aton(gpib_address)
+                if __debug__:
+                    print("Good ip connection")
+                resource_manager = pyvisa.ResourceManager("@py")
+                self.supply = resource_manager.open_resource("TCPIP0::{}::inst0::INSTR".format(gpib_address))
+            except socket.timeout:
+                if __debug__:
+                    print("Bad ip connection, reverting")
+                resource_manager = pyvisa.ResourceManager()
+                gpib_address = 24
 
-        resource_manager = pyvisa.ResourceManager()
+        if not self.supply:
+            # Temporarily set the power supply to point at the first address
+            self.supply = resource_manager. \
+                open_resource(resource_manager.list_resources()[0])
 
-        # Temporarily set the power supply to point at the first address
-        self.supply = resource_manager.\
-            open_resource(resource_manager.list_resources()[0])
+            # Search through intrument cluster for the gpib address
+            # TODO Implement the same thing using a filter or reduce
 
-        # Search through intrument cluster for the gpib address
-        # TODO Implement the same thing using a filter or reduce
-        for address in resource_manager.list_resources():
-            print("Searching for Keithley @" + str(gpib_address))
-            if str(gpib_address) in str(address):
-                print("Keithley Found")
-                self.supply = resource_manager.open_resource(address)
-            else:
-                print("Keithley not found; Please check GPIB Address")
+            for address in resource_manager.list_resources():
+                print("Searching for Keithley @" + str(gpib_address))
+                if str(gpib_address) in str(address):
+                    print("Keithley Found")
+                    self.supply = resource_manager.open_resource(address)
+                else:
+                    print("Keithley not found; Please check GPIB Address")
+
 
         print("Initializing Keithley 2657A")
         # Verify sanity of device

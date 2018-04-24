@@ -1,5 +1,5 @@
-import pyvisa
 import numpy
+import pyvisa
 
 
 class Agilent4156(object):
@@ -15,10 +15,10 @@ class Agilent4156(object):
         self.inst = None
         for address in rm.list_resources():
             if str(self.gpib_addr).lower() in address.lower():
-                #print("Found agilent parameter analyzer")
+                print("Located agilent parameter analyzer")
                 self.inst = rm.open_resource(address)
-                
         self.inst = rm.open_resource(rm.list_resources()[0])
+
         print(self.inst.query("*IDN?"))
         
         self.inst.write("*RST")
