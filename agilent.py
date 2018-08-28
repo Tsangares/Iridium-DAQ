@@ -126,8 +126,8 @@ class Agilent4156(object):
         self.inst.close()
 
     def configure_constant_output(self, smu, voltage, compliance):
-        set_comp_command = ":PAGE:MEAS:SAMP:CONS:SMU{}:COMP {};".format(smu, compliance)
-        set_smu_volt_command = ":PAGE:MEAS:SAMP:CONS:SMU{} {};".format(smu, voltage)
+        set_comp_command = ":PAGE:MEAS:SAMP:CONS:SMU%s:COMP %s;"%(smu, compliance)
+        set_smu_volt_command = ":PAGE:MEAS:SAMP:CONS:SMU%s %s;"%(smu, voltage)
 
         self.inst.write(set_comp_command+set_smu_volt_command)
 

@@ -59,7 +59,7 @@ class Keithley2657a(PowerSupplyFactory):
                 if __debug__:
                     print("Good ip connection")
                 resource_manager = pyvisa.ResourceManager("@py")
-                self.supply = resource_manager.open_resource("TCPIP0::{}::inst0::INSTR".format(gpib_address))
+                self.supply = resource_manager.open_resource("TCPIP0::%s::inst0::INSTR"%(gpib_address))
             except socket.timeout:
                 if __debug__:
                     print("Bad ip connection, reverting")

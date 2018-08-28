@@ -27,9 +27,9 @@ class Daq(object):
         self.supply.configure_measurement(1, 0, keithley_global_params[2])
 
         if __debug__:
-            print("DEBUG: SMU_CONFIG:{}".format(smu_config))
-            print("DEBUG: SMU_GLOBAL:{}".format(smu_global_params))
-            print("DEBUG: KEITHLEY:{}".format(keithley_global_params))
+            print("DEBUG: SMU_CONFIG:%s"%(smu_config))
+            print("DEBUG: SMU_GLOBAL:%s"%(smu_global_params))
+            print("DEBUG: KEITHLEY:%s"%(keithley_global_params))
         if self.use_smu:
             for ch_num in range(0, 4):
                 (ch_on, ch_comp, ch_alias) = smu_config[ch_num]
@@ -40,7 +40,7 @@ class Daq(object):
                 # if ch_num is not int(scan_smu.split("_")[1])-1:
                 self.scope.configure_constant_output(ch_num, 0, ch_comp)
             self.sample_smu = int(scan_smu.split("_")[1]) - 1
-            print("SCAN_SMU:{}".format(self.sample_smu))
+            print("SCAN_SMU:%s"%(self.sample_smu))
 
             self.scope.configure_integration_time(_int_time=1)
         self.iv_loop(smu_global_params[1], keithley_global_params[1])
@@ -55,7 +55,7 @@ class Daq(object):
                 f.write("KEITHLEY_V,KEITHLEY_I,SMU_1_V,SMU_1_I,SMU_2_V,SMU_2_I\n")
                 for event in self.list_data:
                     (k_iv, smu_1_iv, smu_2_iv) = event
-                    f.write("{},{},{},{},{},{}\n".format(
+                    f.write("%s,%s,%s,%s,%s,%s\n"%(
                         k_iv[0], k_iv[1],
                         smu_1_iv[0], smu_1_iv[1],
                         smu_2_iv[0], smu_2_iv[1]
@@ -64,7 +64,7 @@ class Daq(object):
                 f.write("KEITHLEY_V,KEITHLEY_I\n")
                 for event in self.list_data:
                     (k_iv) = event
-                    f.write("{},{}\n".format(
+                    f.write("%s,%s\n"%(
                         k_iv[0], k_iv[1]
                     ))
 
@@ -88,7 +88,7 @@ class Daq(object):
                 self.supply.set_output(volt*step_volt+start_volt)
                 time.sleep(self.k_hold_time)
                 if __debug__:
-                    print("KVOLT:{}".format(volt*step_volt+start_volt))
+                    print("KVOLT:%s"%(volt*step_volt+start_volt))
                 k_current = self.supply.get_current()
                 if self.use_smu:
                     for analyzer_region in analyzer_voltages:
@@ -106,7 +106,7 @@ class Daq(object):
                         for anal_volt in range(anal_num_steps):
                             currents = []
                             if __debug__:
-                                print("AVOLT:{}".format(anal_volt * anal_step_volt + anal_start_volt))
+                                print("AVOLT:%s"%(anal_volt * anal_step_volt + anal_start_volt))
                             self.scope.configure_constant_output(
                                 str(int(self.sample_smu) + 1),
                                 anal_volt * anal_step_volt + anal_start_volt,
@@ -184,12 +184,12 @@ $$$$$$/ $$/       $$/  $$$$$$$/ $$/  $$$$$$/  $$/  $$/  $$/
     parser.add_argument("--outfile", help="Output filename")
     args = parser.parse_args()
     if args.config:
-        print("Loading in {}".format(args.config))
+        print("Loading in %s"%(args.config))
     else:
         print("No config file specified. Exiting now")
         sys.exit(1)
     if args.outfile:
-        print("Saving to {}".format(args.outfile))
+        print("Saving to %s"%(args.outfile))
     else:
         print("No output file specified. Using latest.csv")
         args.outfile = "latest_daq"
@@ -197,9 +197,9 @@ $$$$$$/ $$/       $$/  $$$$$$$/ $$/  $$$$$$/  $$/  $$/  $$/
     config.read_file(open(args.config))
     smu_config = []
     for num_smu in range(1, 5):
-        ch_on = config.getboolean("Parameter Analyzer", "smu{}".format(num_smu))
-        ch_comp = config.getfloat("Parameter Analyzer", "smu{}_compliance".format(num_smu))
-        ch_alias = config.get("Parameter Analyzer", "smu{}_alias".format(num_smu))
+        ch_on = config.getboolean("Parameter Analyzer", "smu%s"%(num_smu))
+        ch_comp = config.getfloat("Parameter Analyzer", "smu%s_compliance"%(num_smu))
+        ch_alias = config.get("Parameter Analyzer", "smu%s_alias"%(num_smu))
         smu_config.append((ch_on, ch_comp, ch_alias))
     use_smu = config.getboolean("Parameter Analyzer", "use_analyzer")
     scan_smu = config.get("Parameter Analyzer", "scan_smu")
